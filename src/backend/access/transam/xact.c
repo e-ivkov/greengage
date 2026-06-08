@@ -5613,6 +5613,9 @@ BeginInternalSubTransaction(const char *name)
 
 	CommitTransactionCommand();
 	StartTransactionCommand();
+
+	/* Push a tempcat snapshot boundary for the implicit subtransaction */
+	tempcat_begin_subtransaction();
 }
 
 /*
@@ -5653,6 +5656,9 @@ ReleaseCurrentSubTransaction(void)
 				"Could not ReleaseCurrentSubTransaction dispatch failed");
 		}
 	}
+
+	/* Commit tempcat changes for the implicit subtransaction */
+	tempcat_commit_subtransaction();
 
 	MemoryContextSwitchTo(CurTransactionContext);
 	CommitSubTransaction();
@@ -5710,6 +5716,9 @@ RollbackAndReleaseCurrentSubTransaction(void)
 				 BlockStateAsString(s->blockState));
 			break;
 	}
+
+	/* Abort tempcat changes for the implicit subtransaction */
+	tempcat_abort_subtransaction();
 
 	/*
 	 * Abort the current subtransaction, if needed.
